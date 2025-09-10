@@ -11,6 +11,8 @@
 % This function plots load vs angle around gg diagram. The next iteration
 % will plot load vs time
 
+% Run this program with the fe12params structure and the GGV_dataComb array
+
 function forces = suspensionSolver(carParams, Gs)
     inboard = carParams.inboard;
     outboard = carParams.outboard;
