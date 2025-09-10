@@ -2,17 +2,14 @@
 % car parameters and acceleration data entered in a matrix of corresponding 
 % time, longitudinal (x), and lateral (y) values. The acceleration data 
 % must be organized in this order to produce a valid return
-%
+
 % This model assumes that the lateral force of each tire is propoteional
 % to its share of the whole vehicle's lateral force (per the suspension
 % solver sheet)
-%
-% This function plots load vs time for both front and rear suspension and
-% returns maximum tension and compression values in table format
-%
+
+% This function plots load vs time for both front and rear suspension
+
 % Run this program with the fe12params structure and the accelData1 array
-% in the format:
-% [frontMaxes, rearMaxes] = suspensionSolverPlot(fe12params, accelData1)
 
 function [frontMaxes, rearMaxes] = suspensionSolverPlot(carParams, accelData)
     accelData(:,1) = accelData(:,1)-accelData(1,1);                        % Makes the first recorded time point zero
@@ -52,8 +49,6 @@ function [frontMaxes, rearMaxes] = suspensionSolverPlot(carParams, accelData)
     legend('Up-Fore','Up-Aft','Low-Fore','Low-Aft','Pushrod','Tie Rod')
     
     frontMaxes = findMaxes(forces);
-    frontMaxes.Properties.VariableNames = {'Up-Fore','Up-Aft','Low-Fore','Low-Aft','Pushrod','Tie Rod'};
-    frontMaxes.Properties.RowNames = {'Max Compression', 'Max Tension'};
 
     inboard = carParams.inboardR;
     outboard = carParams.outboardR;
@@ -85,8 +80,6 @@ function [frontMaxes, rearMaxes] = suspensionSolverPlot(carParams, accelData)
     legend('Up-Fore','Up-Aft','Low-Fore','Low-Aft','Pushrod','Toe Rod')
 
     rearMaxes = findMaxes(forces);
-    rearMaxes.Properties.VariableNames = {'Up-Fore','Up-Aft','Low-Fore','Low-Aft','Pushrod','Toe Rod'};
-    rearMaxes.Properties.RowNames = {'Max Compression', 'Max Tension'};
 end
 
 % Function to find forces and weight transfer from a structure of car
@@ -135,15 +128,10 @@ function [deltaFzFront, deltaFzRear] = SampoWeightTransfer(carParams, Ay)
 end
 
 function maxes = findMaxes(values)
-    maxVals = zeros(2,6);
-    for i = 1:size(values, 1)
+    maxes = zeros(1,6);
+    for i = size(values, 1)
         for j = 1:6
-            if values(i,j) > maxVals(1,j)
-                maxVals(1,j) = values(i,j);
-            elseif values(i,j) < maxVals(2,j)
-                maxVals(2,j) = values(i,j);
-            end
+            
         end
     end
-    maxes = array2table(maxVals);
 end
