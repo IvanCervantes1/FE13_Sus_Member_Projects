@@ -1,0 +1,20 @@
+function camberBump(carParams, bumpRange)
+    inboard = carParams.inboardR;
+    outboard = carParams.outboardR;
+    inboardU = [(inboard(1,2)+inboard(2,2))/2, (inboard(1,3)+inboard(2,3))/2];
+    inboardL = [(inboard(3,2)+inboard(4,2))/2, (inboard(3,3)+inboard(4,3))/2];
+    outboardU = [(outboard(1,2)+outboard(2,2))/2, (outboard(1,3)+outboard(2,3))/2];
+    outboardL = [(outboard(3,2)+outboard(4,2))/2, (outboard(3,3)+outboard(4,3))/2];
+    bvec0 = outboardL-inboardL;
+    cvec = inboardU-inboardL;
+    fvec0 = outboardU-outboardL;
+    theta0 = -atand(fvec0(2)/fvec0(1));
+    b = norm(bvec0);
+    c = norm(cvec);
+    d - 
+    f = norm(fvec0)
+    for i = 1:length(bumpRange, 1)
+        bvec = 
+    end
+end
+    
