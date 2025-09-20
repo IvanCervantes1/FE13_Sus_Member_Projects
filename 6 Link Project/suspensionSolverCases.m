@@ -34,7 +34,6 @@ function [forcesF, forcesR, frontMaxes, rearMaxes] = suspensionSolverCases(carPa
     momentArm = zeros(1,3);                                                % Measurements of moments will be taken relative to the origin, this can be changed
     A = zeros(6);                                                          % Initializes a matrix to store unit vectors and moment vectors
     [loadTableF, loadTableR] = loadCases(carParams, Gs(:, 1:2)*9.81); % Creates a table of x, y, and z loads using car parameters and acceleration pairs
-    exist('specialCases', 'var')
     if exist('specialCases', 'var')
         for i = 1:length(specialCases(1))
             loadTableF(size(loadTableF,1)+i, :) = specialCases;
