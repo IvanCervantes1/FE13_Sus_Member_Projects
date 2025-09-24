@@ -53,7 +53,7 @@ function [frontMaxes, rearMaxes] = suspensionSolverPlot(carParams, accelData)
     
     frontMaxes = findMaxes(forces);
     frontMaxes.Properties.VariableNames = {'Up-Fore','Up-Aft','Low-Fore','Low-Aft','Pushrod','Tie Rod'};
-    frontMaxes.Properties.RowNames = {'Max Compression', 'Max Tension'};
+    frontMaxes.Properties.RowNames = {'Max Tension', 'Max Compression'};
 
     inboard = carParams.inboardR;
     outboard = carParams.outboardR;
@@ -86,7 +86,7 @@ function [frontMaxes, rearMaxes] = suspensionSolverPlot(carParams, accelData)
 
     rearMaxes = findMaxes(forces);
     rearMaxes.Properties.VariableNames = {'Up-Fore','Up-Aft','Low-Fore','Low-Aft','Pushrod','Toe Rod'};
-    rearMaxes.Properties.RowNames = {'Max Compression', 'Max Tension'};
+    rearMaxes.Properties.RowNames = {'Max Tension', 'Max Compression'};
 end
 
 % Function to find forces and weight transfer from a structure of car

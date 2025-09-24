@@ -60,7 +60,7 @@ function [forcesF, forcesR, frontMaxes, rearMaxes] = suspensionSolverCases(carPa
     end
     frontMaxes = findMaxes(forcesF);
     frontMaxes.Properties.VariableNames = {'Up-Fore','Up-Aft','Low-Fore','Low-Aft','Pushrod','Tie Rod'};
-    frontMaxes.Properties.RowNames = {'Max Compression', 'Max Tension'};
+    frontMaxes.Properties.RowNames = {'Max Tension', 'Max Compression'};
     forcesF = array2table(forcesF);
     forcesF.Properties.VariableNames = {'Up-Fore','Up-Aft','Low-Fore','Low-Aft','Pushrod','Tie Rod'};
     for i = 1:6                                                            
@@ -79,7 +79,7 @@ function [forcesF, forcesR, frontMaxes, rearMaxes] = suspensionSolverCases(carPa
     end
     rearMaxes = findMaxes(forcesR);
     rearMaxes.Properties.VariableNames = {'Up-Fore','Up-Aft','Low-Fore','Low-Aft','Pushrod','Toe Rod'};
-    rearMaxes.Properties.RowNames = {'Max Compression', 'Max Tension'};
+    rearMaxes.Properties.RowNames = {'Max Tension', 'Max Compression'};
     forcesR = array2table(forcesR);
     forcesR.Properties.VariableNames = {'Up-Fore','Up-Aft','Low-Fore','Low-Aft','Pushrod','Toe Rod'};
 end
