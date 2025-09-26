@@ -24,7 +24,7 @@
 % [forcesF, ForcesR, frontMaxes, rearMaxes] = suspensionSolverPlot(fe12params, Gs)
 
 
-function [forcesF, forcesR, frontMaxes, rearMaxes] = suspensionSolverCases(carParams, Gs, specialCases)
+function [forcesF, forcesR, frontMaxes, rearMaxes] = suspensionSolverCases(carParams, Gs, specialCasesF, specialCasesR)
     inboardF = carParams.inboardF;
     outboardF = carParams.outboardF;
     locationsF = carParams.tireContactPtF;
@@ -34,10 +34,14 @@ function [forcesF, forcesR, frontMaxes, rearMaxes] = suspensionSolverCases(carPa
     momentArm = zeros(1,3);                                                % Measurements of moments will be taken relative to the origin, this can be changed
     A = zeros(6);                                                          % Initializes a matrix to store unit vectors and moment vectors
     [loadTableF, loadTableR] = loadCases(carParams, Gs(:, 1:2)*9.81); % Creates a table of x, y, and z loads using car parameters and acceleration pairs
-    if exist('specialCases', 'var')
-        for i = 1:length(specialCases(1))
-            loadTableF(size(loadTableF,1)+i, :) = specialCases;
-            loadTableR(size(loadTableR,1)+i, :) = specialCases;
+    if exist('specialCasesF', 'var')
+        for i = 1:length(specialCasesF(1))
+            loadTableF(size(loadTableF,1)+i, :) = specialCasesF;
+        end
+    end
+    if exist('specialCasesR', 'var')
+        for i = 1:length(specialCasesR(1))
+            loadTableR(size(loadTableR,1)+i, :) = specialCasesR;
         end
     end
     forcesF = zeros(size(loadTableF,1),6);                                 % Initializes a matrix to store the forces with a row for each recorded acceleration pair
@@ -93,14 +97,14 @@ function [loadTableF, loadTableR] = loadCases(carParams, accelData)
     for i = 1:size(accelData,1)                                            % For each provided value of lat and long G's
         [loadTableF(i,1), loadTableR(i,1)] = SampoWeightTransfer(carParams, accelData(i,2));
         loadTableF(i,2) = (carParams.m*accelData(i,1)*carParams.hCG)/carParams.WB;   % Calculates longitudinal WT
-        loadTableF(i,8) = carParams.m*9.81/4+loadTableF(i,1)+loadTableF(i,2)/2;    % Calculates Fz
+        loadTableF(i,8) = carParams.m*9.81*carParams.PFront/2+loadTableF(i,1)+loadTableF(i,2)/2;    % Calculates Fz
         loadTableF(i,3) = loadTableF(i,8)/(carParams.m*9.81);              % Calculates Fz%
         loadTableF(i,4) = carParams.m*accelData(i,1);                 % Calculates Fx_car
         loadTableF(i,5) = carParams.m*accelData(i,2);                 % Calculates Fy_car
         loadTableF(i,6) = loadTableF(i,4)*loadTableF(i,3);                 % Calculates Fx
         loadTableF(i,7) = loadTableF(i,5)*loadTableF(i,3);                 % Calculates Fy
         loadTableR(i,2) = (carParams.m*accelData(i,1)*carParams.hCG)/carParams.WB;   % Calculates longitudinal WT
-        loadTableR(i,8) = carParams.m*9.81/4+loadTableR(i,1)+loadTableR(i,2)/2;    % Calculates Fz
+        loadTableR(i,8) = carParams.m*9.81*(1-carParams.PFront)/2+loadTableR(i,1)+loadTableR(i,2)/2;    % Calculates Fz
         loadTableR(i,3) = loadTableR(i,8)/(carParams.m*9.81);                       % Calculates Fz%
         loadTableR(i,4) = carParams.m*accelData(i,1);                               % Calculates Fx_car
         loadTableR(i,5) = carParams.m*accelData(i,2);                               % Calculates Fy_car

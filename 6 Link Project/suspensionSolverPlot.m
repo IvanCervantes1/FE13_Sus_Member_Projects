@@ -45,7 +45,7 @@ function [frontMaxes, rearMaxes] = suspensionSolverPlot(carParams, accelData)
     subplot(2,1,1);
     plot(accelData(:, 1),forces(:,1),accelData(:,1),forces(:,2),accelData(:,1),forces(:,3),accelData(:,1),forces(:,4),accelData(:,1),forces(:,5),accelData(:,1),forces(:,6)); % Load vs. gg diagram angle for all 6 arms
     xlim([0,accelData(size(accelData,1),1)])
-    ylim([-6000, 6000])
+    ylim([-6500, 6500])
     xlabel('Time (s)', 'FontSize', 20)
     ylabel('Load (N)', 'FontSize', 20)
     title('Load vs. Time, Front', 'FontSize', 20)
@@ -78,7 +78,7 @@ function [frontMaxes, rearMaxes] = suspensionSolverPlot(carParams, accelData)
     subplot(2,1,2);
     plot(accelData(:, 1),forces(:,1),accelData(:,1),forces(:,2),accelData(:,1),forces(:,3),accelData(:,1),forces(:,4),accelData(:,1),forces(:,5),accelData(:,1),forces(:,6)); % Load vs. gg diagram angle for all 6 arms
     xlim([0,accelData(size(accelData,1),1)])
-    ylim([-6000, 6000])
+    ylim([-6500 6500])
     xlabel('Time (s)', 'FontSize', 20)
     ylabel('Load (N)', 'FontSize', 20)
     title('Load vs. Time, Rear', 'FontSize', 20)
@@ -98,14 +98,14 @@ function [loadTableF, loadTableR] = loadCases(carParams, accelData)
     for i = 1:size(accelData,1)                                            % For each provided value of lat and long G's
         [loadTableF(i,1), loadTableR(i,1)] = SampoWeightTransfer(carParams, accelData(i,2));
         loadTableF(i,2) = (carParams.m*accelData(i,1)*carParams.hCG)/carParams.WB;   % Calculates longitudinal WT
-        loadTableF(i,8) = carParams.m*9.81/4+loadTableF(i,1)+loadTableF(i,2)/2;    % Calculates Fz
+        loadTableF(i,8) = carParams.m*9.81*carParams.PFront/2+loadTableF(i,1)+loadTableF(i,2)/2;    % Calculates Fz
         loadTableF(i,3) = loadTableF(i,8)/(carParams.m*9.81);              % Calculates Fz%
         loadTableF(i,4) = carParams.m*accelData(i,1);                 % Calculates Fx_car
         loadTableF(i,5) = carParams.m*accelData(i,2);                 % Calculates Fy_car
         loadTableF(i,6) = loadTableF(i,4)*loadTableF(i,3);                 % Calculates Fx
         loadTableF(i,7) = loadTableF(i,5)*loadTableF(i,3);                 % Calculates Fy
         loadTableR(i,2) = (carParams.m*accelData(i,1)*carParams.hCG)/carParams.WB;   % Calculates longitudinal WT
-        loadTableR(i,8) = carParams.m*9.81/4+loadTableR(i,1)+loadTableR(i,2)/2;    % Calculates Fz
+        loadTableR(i,8) = carParams.m*9.81*(1-carParams.PFront)/2+loadTableR(i,1)+loadTableR(i,2)/2;    % Calculates Fz
         loadTableR(i,3) = loadTableR(i,8)/(carParams.m*9.81);                       % Calculates Fz%
         loadTableR(i,4) = carParams.m*accelData(i,1);                               % Calculates Fx_car
         loadTableR(i,5) = carParams.m*accelData(i,2);                               % Calculates Fy_car
