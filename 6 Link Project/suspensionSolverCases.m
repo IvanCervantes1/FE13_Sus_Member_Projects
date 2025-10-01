@@ -33,7 +33,7 @@ function [forcesF, forcesR, frontMaxes, rearMaxes] = suspensionSolverCases(carPa
     locationsR = carParams.tireContactPtR;
     momentArm = zeros(1,3);                                                % Measurements of moments will be taken relative to the origin, this can be changed
     A = zeros(6);                                                          % Initializes a matrix to store unit vectors and moment vectors
-    [loadTableF, loadTableR] = loadCases(carParams, Gs(:, 1:2)*9.81); % Creates a table of x, y, and z loads using car parameters and acceleration pairs
+    [loadTableF, loadTableR] = loadCases(carParams, Gs(:, 1:2)*9.81);      % Creates a table of x, y, and z loads using car parameters and acceleration pairs
     if exist('specialCasesF', 'var')
         for i = 1:length(specialCasesF(1))
             loadTableF(size(loadTableF,1)+i, :) = specialCasesF;
@@ -49,15 +49,15 @@ function [forcesF, forcesR, frontMaxes, rearMaxes] = suspensionSolverCases(carPa
     locationsF = locationsF-momentArm;                                     % Normalizes the force application locations to the chosen moment arm
     locationsR = locationsR-momentArm;
     for i = 1:6                                                            % For each arm
-        link = (outboardF(i,:)-inboardF(i,:))';                            % Finds the distance between the inboard and outboard mounting points in terms of x, y, and z
-        A(1:3,i) = link/norm(link);                                        % Turns each x, y, and z value into a unit vector and places said vector in its respective indexes within A
+        link = (outboardF(i,:)-inboardF(i,:))';                            % Finds the vector components of each link
+        A(1:3,i) = link/norm(link);                                        % Turns each component into a unit vector and places it within A
     end
     inboardF = inboardF - momentArm;                                       % Normalizes the inboard location to the chosen moment arm
     for i = 1:6                                                            % For each arm
-        A(4:6,i) = cross(inboardF(i,:), A(1:3,i)');                        % Calculates the moment vector and places said vector in its respective indexes within A
+        A(4:6,i) = cross(inboardF(i,:), A(1:3,i)');                        % Calculates the moment vector and places said vector in A
     end
-    for i = 1:size(loadTableF,1)                                            % For each lat/long acceleration pair
-        fApplied = eye(3).*loadTableF(i, 6:8)';                             % Creates a diagonal matrix with the appropriate x, y, and z forces for the respective lat/long acceleration pair
+    for i = 1:size(loadTableF,1)                                           % For each lat/long acceleration pair
+        fApplied = eye(3).*loadTableF(i, 6:8)';                            % Creates a diagonal matrix with x, y, and z forces
         mApplied = [cross(locationsF(1,:),fApplied(1,:)); cross(locationsF(2,:),fApplied(2,:)); cross(locationsF(3,:),fApplied(3,:))]; % Creates a matrix of applied moments by crossing the applied force locations with applied forces
         x = [-fApplied(1,1); -fApplied(2,2); -fApplied(3,3); -sum(mApplied)'];      % Fills column vector x with forces applied and moments applied
         forcesF(i,:) = (A\x)';                                             % Fills the respective row of the forces matrix with the forces through each arm
@@ -97,19 +97,19 @@ function [loadTableF, loadTableR] = loadCases(carParams, accelData)
     for i = 1:size(accelData,1)                                            % For each provided value of lat and long G's
         [loadTableF(i,1), loadTableR(i,1)] = SampoWeightTransfer(carParams, accelData(i,2));
         loadTableF(i,2) = (carParams.m*accelData(i,1)*carParams.hCG)/carParams.WB;   % Calculates longitudinal WT
-        loadTableF(i,8) = carParams.m*9.81*carParams.PFront/2+loadTableF(i,1)+loadTableF(i,2)/2;    % Calculates Fz
+        loadTableF(i,8) = carParams.m*9.81*carParams.PFront/2+loadTableF(i,1)-loadTableF(i,2)/2;    % Calculates Fz
         loadTableF(i,3) = loadTableF(i,8)/(carParams.m*9.81);              % Calculates Fz%
-        loadTableF(i,4) = carParams.m*accelData(i,1);                 % Calculates Fx_car
-        loadTableF(i,5) = carParams.m*accelData(i,2);                 % Calculates Fy_car
+        loadTableF(i,4) = carParams.m*accelData(i,1);                      % Calculates Fx_car
+        loadTableF(i,5) = carParams.m*accelData(i,2);                      % Calculates Fy_car
         loadTableF(i,6) = loadTableF(i,4)*loadTableF(i,3);                 % Calculates Fx
         loadTableF(i,7) = loadTableF(i,5)*loadTableF(i,3);                 % Calculates Fy
         loadTableR(i,2) = (carParams.m*accelData(i,1)*carParams.hCG)/carParams.WB;   % Calculates longitudinal WT
         loadTableR(i,8) = carParams.m*9.81*(1-carParams.PFront)/2+loadTableR(i,1)+loadTableR(i,2)/2;    % Calculates Fz
-        loadTableR(i,3) = loadTableR(i,8)/(carParams.m*9.81);                       % Calculates Fz%
-        loadTableR(i,4) = carParams.m*accelData(i,1);                               % Calculates Fx_car
-        loadTableR(i,5) = carParams.m*accelData(i,2);                               % Calculates Fy_car
-        loadTableR(i,6) = loadTableR(i,4)*loadTableR(i,3);                          % Calculates Fx
-        loadTableR(i,7) = loadTableR(i,5)*loadTableR(i,3);                          % Calculates Fy
+        loadTableR(i,3) = loadTableR(i,8)/(carParams.m*9.81);              % Calculates Fz%
+        loadTableR(i,4) = carParams.m*accelData(i,1);                      % Calculates Fx_car
+        loadTableR(i,5) = carParams.m*accelData(i,2);                      % Calculates Fy_car
+        loadTableR(i,6) = loadTableR(i,4)*loadTableR(i,3);                 % Calculates Fx
+        loadTableR(i,7) = loadTableR(i,5)*loadTableR(i,3);                 % Calculates Fy
     end
 end
 
@@ -117,21 +117,21 @@ end
 % flexibility
 
 function [deltaFzFront, deltaFzRear] = SampoWeightTransfer(carParams, Ay)
-    kF = carParams.kF;                                                     % For the sake of simplicity, members of carParams structure are assigned
-    kR = carParams.kR;                                                     % to shorter local variables within this function
-    kC = carParams.kC;
-    m_uF = carParams.m_uF;
-    m_uR = carParams.m_uR;
-    TWf = carParams.TWf;
-    TWr = carParams.TWr;
-    h_uF = carParams.h_uF;
-    h_uR = carParams.h_uR;
-    zF = carParams.zF;
-    zR = carParams.zR;
-    d_sF = carParams.h_sF - zF;
-    d_sR = carParams.h_sR - zR;
-    m_sF = carParams.m_s*carParams.b_s/carParams.WB;
-    m_sR = carParams.m_s*carParams.a_s/carParams.WB;
+    kF = carParams.kF;                                                     % Front roll stiffness
+    kR = carParams.kR;                                                     % Rear roll stiffness
+    kC = carParams.kC;                                                     % Chassis torsional stiffness
+    m_uF = carParams.m_uF;                                                 % Front unsprung mass
+    m_uR = carParams.m_uR;                                                 % Rear unsprung mass
+    TWf = carParams.TWf;                                                   % Front track width
+    TWr = carParams.TWr;                                                   % Rear track width
+    h_uF = carParams.h_uF;                                                 % Height of front unsprung center of gravity
+    h_uR = carParams.h_uR;                                                 % Height of rear unsprung center of gravity
+    zF = carParams.zF;                                                     % Height of roll axis in the front
+    zR = carParams.zR;                                                     % Height of roll axis in the rear
+    d_sF = carParams.h_sF - zF;                                            % Distance between front unsprung center of mass and roll axis
+    d_sR = carParams.h_sR - zR;                                            % Distance between rear unsprung center of mass and roll axis
+    m_sF = carParams.m_s*carParams.b_s/carParams.WB;                       % Front sprung mass
+    m_sR = carParams.m_s*carParams.a_s/carParams.WB;                       % Rear sprung mass
     deltaFzFront = ((kF*d_sF*m_sF)/(kF+(kR*kC/(kR+kC)))+((kF*kC/(kF+kC))*d_sR*m_sR)/(kF*kC/(kF+kC)+kR)+zF*m_sF+h_uF*m_uF)*Ay/TWf;
     deltaFzRear = ((kR*kC/(kR+kC)*d_sF*m_sF)/(kF+kR*kC/(kR+kC))+(kR*d_sR*m_sR)/(kF*kC/(kF+kC)+kR)+zR*m_sR+h_uR*m_uR)*Ay/TWr;
 end
