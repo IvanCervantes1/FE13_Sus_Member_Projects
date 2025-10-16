@@ -27,13 +27,18 @@
 function [forcesF, forcesR, frontMaxes, rearMaxes] = suspensionSolverCases(carParams, Gs, specialCasesF, specialCasesR)
     inboardF = carParams.inboardF;
     outboardF = carParams.outboardF;
-    locationsF = carParams.tireContactPtF;
+    locationsF = [carParams.tireContactPtF(1,1), carParams.tireContactPtF(1,2), -8*25.4];
+    locationsF = [locationsF; locationsF; locationsF; locationsF; locationsF; locationsF];
     inboardR = carParams.inboardR;
     outboardR = carParams.outboardR;
-    locationsR = carParams.tireContactPtR;
-    momentArm = zeros(1,3);                                                % Measurements of moments will be taken relative to the origin, this can be changed
+    locationsR = [carParams.tireContactPtR(1,1), carParams.tireContactPtR(1,2), -8*25.4];
+    locationsR = [locationsR; locationsR; locationsR; locationsR; locationsR; locationsR];
+    RF = locationsF-[carParams.tireContactPtF; carParams.tireContactPtF];
+    RR = locationsR-[carParams.tireContactPtR; carParams.tireContactPtR];
+    rF = outboardF - locationsF;
+    rR = outboardR - locationsR;
     A = zeros(6);                                                          % Initializes a matrix to store unit vectors and moment vectors
-    [loadTableF, loadTableR] = loadCases(carParams, Gs(:, 1:2)*9.81);      % Creates a table of x, y, and z loads using car parameters and acceleration pairs
+    [loadTableF, loadTableR] = loadCases(carParams, Gs(:, 1:2));           % Creates a table of x, y, and z loads using car parameters and acceleration pairs
     if exist('specialCasesF', 'var')
         for i = 1:length(specialCasesF(1))
             loadTableF(size(loadTableF,1)+i, :) = specialCasesF;
@@ -46,40 +51,44 @@ function [forcesF, forcesR, frontMaxes, rearMaxes] = suspensionSolverCases(carPa
     end
     forcesF = zeros(size(loadTableF,1),6);                                 % Initializes a matrix to store the forces with a row for each recorded acceleration pair
     forcesR = zeros(size(loadTableR,1),6);
-    locationsF = locationsF-momentArm;                                     % Normalizes the force application locations to the chosen moment arm
-    locationsR = locationsR-momentArm;
     for i = 1:6                                                            % For each arm
         link = (outboardF(i,:)-inboardF(i,:))';                            % Finds the vector components of each link
+        norm(link);
         A(1:3,i) = link/norm(link);                                        % Turns each component into a unit vector and places it within A
     end
-    inboardF = inboardF - momentArm;                                       % Normalizes the inboard location to the chosen moment arm
     for i = 1:6                                                            % For each arm
-        A(4:6,i) = cross(inboardF(i,:), A(1:3,i)');                        % Calculates the moment vector and places said vector in A
+        A(4,i) = A(3,i)*rF(i,2)-A(2,i)*rF(i,3);                            % Calculates the moment vector and places said vector in A
+        A(5,i) = A(3,i)*rF(i,1)-A(1,i)*rF(i,3);
+        A(6,i) = A(2,i)*rF(i,1)-A(1,i)*rF(i,2);
     end
     for i = 1:size(loadTableF,1)                                           % For each lat/long acceleration pair
-        fApplied = eye(3).*loadTableF(i, 6:8)';                            % Creates a diagonal matrix with x, y, and z forces
-        mApplied = [cross(locationsF(1,:),fApplied(1,:)); cross(locationsF(2,:),fApplied(2,:)); cross(locationsF(3,:),fApplied(3,:))]; % Creates a matrix of applied moments by crossing the applied force locations with applied forces
-        x = [-fApplied(1,1); -fApplied(2,2); -fApplied(3,3); -sum(mApplied)'];      % Fills column vector x with forces applied and moments applied
-        forcesF(i,:) = (A\x)';                                             % Fills the respective row of the forces matrix with the forces through each arm
+        B(1:3,1) = loadTableF(i, 3:5)';                                    % Creates a diagonal matrix with x, y, and z forces
+        B(4,1) = B(3,1)*RF(1,2)-B(2,1)*RF(1,3);
+        B(5,1) = B(1,1)*RF(1,3)-B(3,1)*RF(1,1);
+        B(6,1) = B(2,1)*RF(1,1)-B(1,1)*RF(1,2);
+        forcesF(i,:) = (A\B)';                                             % Fills the respective row of the forces matrix with the forces through each arm
     end
     frontMaxes = findMaxes(forcesF);
     frontMaxes.Properties.VariableNames = {'Up-Fore','Up-Aft','Low-Fore','Low-Aft','Pushrod','Tie Rod'};
     frontMaxes.Properties.RowNames = {'Max Tension', 'Max Compression'};
     forcesF = array2table(forcesF);
     forcesF.Properties.VariableNames = {'Up-Fore','Up-Aft','Low-Fore','Low-Aft','Pushrod','Tie Rod'};
+    A = zeros(6);
     for i = 1:6                                                            
         link = (outboardR(i,:)-inboardR(i,:))';                            
         A(1:3,i) = link/norm(link);                                        
-    end
-    inboardR = inboardR - momentArm;                                  
+    end                                  
     for i = 1:6                                                            
-        A(4:6,i) = cross(inboardR(i,:), A(1:3,i)');                        
+        A(4,i) = A(3,i)*rR(i,2)-A(2,i)*rR(i,3);                            % Calculates the moment vector and places said vector in A
+        A(5,i) = A(3,i)*rR(i,1)-A(1,i)*rR(i,3);
+        A(6,i) = A(2,i)*rR(i,1)-A(1,i)*rR(i,2);                      
     end
-    for i = 1:size(loadTableR,1)                                                 
-        fApplied = eye(3).*loadTableR(i, 6:8)';                            
-        mApplied = [cross(locationsR(1,:),fApplied(1,:)); cross(locationsR(2,:),fApplied(2,:)); cross(locationsR(3,:),fApplied(3,:))]; % Creates a matrix of applied moments by crossing the applied force locations with applied forces
-        x = [-fApplied(1,1); -fApplied(2,2); -fApplied(3,3); -sum(mApplied)'];      
-        forcesR(i,:) = (A\x)';     
+    for i = 1:size(loadTableR,1) 
+        B(1:3,1) = loadTableR(i, 3:5)';                                    % Creates a diagonal matrix with x, y, and z forces
+        B(4,1) = B(3,1)*RR(1,2)-B(2,1)*RR(1,3);
+        B(5,1) = B(1,1)*RR(1,3)-B(3,1)*RR(1,1);
+        B(6,1) = B(2,1)*RR(1,1)-B(1,1)*RR(1,2);
+        forcesR(i,:) = (A\B)';     
     end
     rearMaxes = findMaxes(forcesR);
     rearMaxes.Properties.VariableNames = {'Up-Fore','Up-Aft','Low-Fore','Low-Aft','Pushrod','Toe Rod'};
@@ -92,24 +101,29 @@ end
 % parameters and an array of lateral and longitudinal acceleration
 
 function [loadTableF, loadTableR] = loadCases(carParams, accelData)
-    loadTableF = zeros(size(accelData,1), 8);                              % Initializes a load table matrix to store the outputs of this function
+    loadTableF = zeros(size(accelData,1), 5);                              % Initializes a load table matrix to store the outputs of this function
     loadTableR = loadTableF;
     for i = 1:size(accelData,1)                                            % For each provided value of lat and long G's
-        [loadTableF(i,1), loadTableR(i,1)] = SampoWeightTransfer(carParams, accelData(i,2));
-        loadTableF(i,2) = (carParams.m*accelData(i,1)*carParams.hCG)/carParams.WB;   % Calculates longitudinal WT
-        loadTableF(i,8) = carParams.m*9.81*carParams.PFront/2+loadTableF(i,1)-loadTableF(i,2)/2;    % Calculates Fz
-        loadTableF(i,3) = loadTableF(i,8)/(carParams.m*9.81);              % Calculates Fz%
-        loadTableF(i,4) = carParams.m*accelData(i,1);                      % Calculates Fx_car
-        loadTableF(i,5) = carParams.m*accelData(i,2);                      % Calculates Fy_car
-        loadTableF(i,6) = loadTableF(i,4)*loadTableF(i,3);                 % Calculates Fx
-        loadTableF(i,7) = loadTableF(i,5)*loadTableF(i,3);                 % Calculates Fy
-        loadTableR(i,2) = (carParams.m*accelData(i,1)*carParams.hCG)/carParams.WB;   % Calculates longitudinal WT
-        loadTableR(i,8) = carParams.m*9.81*(1-carParams.PFront)/2+loadTableR(i,1)+loadTableR(i,2)/2;    % Calculates Fz
-        loadTableR(i,3) = loadTableR(i,8)/(carParams.m*9.81);              % Calculates Fz%
-        loadTableR(i,4) = carParams.m*accelData(i,1);                      % Calculates Fx_car
-        loadTableR(i,5) = carParams.m*accelData(i,2);                      % Calculates Fy_car
-        loadTableR(i,6) = loadTableR(i,4)*loadTableR(i,3);                 % Calculates Fx
-        loadTableR(i,7) = loadTableR(i,5)*loadTableR(i,3);                 % Calculates Fy
+        [loadTableF(i,1), loadTableR(i,1)] = SampoWeightTransfer(carParams, accelData(i,2)*9.81);
+        loadTableF(i,2) = (carParams.m*9.81*accelData(i,1)*carParams.hCG)/carParams.WB;   % Calculates longitudinal WT
+        loadTableF(i,5) = -(carParams.m*9.81*carParams.PFront/2+loadTableF(i,1)-loadTableF(i,2)/2);    % Calculates Fz
+        loadTableR(i,2) = (carParams.m*9.81*accelData(i,1)*carParams.hCG)/carParams.WB;   % Calculates longitudinal WT
+        loadTableR(i,5) = -(carParams.m*9.81*(1-carParams.PFront)/2+loadTableR(i,1)+loadTableR(i,2)/2);    % Calculates Fz
+        if accelData(i,1) > 0 && accelData(i,2) == 0
+            loadTableF(i,3) = 0;
+            loadTableR(i,3) = ((1.25*carParams.m*9.81*carParams.a_s)/carParams.WB)/(1-carParams.hCG/carParams.WB*1.25)/2;
+        elseif accelData(i,1) < 0
+            loadTableF(i,3) = 1.25*loadTableF(i,5);
+            loadTableR(i,3) = 1.25*loadTableR(i,5);
+        elseif accelData(i,1) == 0 && accelData(i,2) ~= 0
+            loadTableF(i,3) = 0;
+            loadTableR(i,3) = 0;
+        elseif accelData(i,1) > 0 && accelData(i,2) ~= 0
+            loadTableF(i,3) = 0;
+            loadTableR(i,3) = 1.25*-loadTableR(i,5);
+        end
+        loadTableF(i,4) = loadTableF(i,5)*accelData(i,2);                  % Calculates Fy
+        loadTableR(i,4) = loadTableR(i,5)*accelData(i,2);                  % Calculates Fy
     end
 end
 
